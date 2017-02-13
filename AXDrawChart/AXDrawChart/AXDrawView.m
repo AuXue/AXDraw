@@ -62,7 +62,6 @@
                 break;
         }
     }
-    [self stroke];
     return self;
 }
 
