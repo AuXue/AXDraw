@@ -36,6 +36,7 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
+        [self setBackgroundColor:[UIColor whiteColor]];
         if (!_scaleArray) {
             _scaleArray = [[NSArray alloc] initWithObjects:@"iOS",@"Java",@"PHP",@"HTML",@"Android",@"C语言",@"C++", nil];
         }
@@ -171,9 +172,9 @@
 {
     UIBezierPath *path = [UIBezierPath bezierPath];
     //绘制圆点
-    [path addArcWithCenter:_startPint radius:3.0 startAngle:0.0 endAngle:M_PI*2 clockwise:YES];
+    [path addArcWithCenter:_startPint radius:2.0 startAngle:0.0 endAngle:M_PI*2 clockwise:YES];
     //设置描边宽度（为了让描边看上去更清楚）
-    [path setLineWidth:3.0];
+    //[path setLineWidth:3.0];
     //描边和填充
     [path stroke];
     [path fill];
@@ -184,11 +185,11 @@
     //设置layer层
     CAShapeLayer *shaperLayer = [CAShapeLayer layer];
     shaperLayer.path = path.CGPath;
-    shaperLayer.lineWidth = 2.0;
+    shaperLayer.lineWidth = 1.0;
     shaperLayer.lineCap = kCALineCapRound;
     shaperLayer.lineJoin = kCALineJoinRound;
-    shaperLayer.strokeColor = [UIColor whiteColor].CGColor;
-    shaperLayer.fillColor = [UIColor whiteColor].CGColor;
+    shaperLayer.strokeColor = [UIColor blackColor].CGColor;
+    shaperLayer.fillColor = [UIColor blackColor].CGColor;
     
     //设置动画
     CABasicAnimation *anim = [CABasicAnimation animationWithKeyPath:NSStringFromSelector(@selector(strokeEnd))];
@@ -205,18 +206,18 @@
     if (_number == _arrayPoint.count - 1) {
         UIBezierPath *paths = [UIBezierPath bezierPath];
         // 添加圆到path
-        [paths addArcWithCenter:_startPint radius:3.0 startAngle:0.0 endAngle:M_PI*2 clockwise:YES];
+        [paths addArcWithCenter:_startPint radius:2.0 startAngle:0.0 endAngle:M_PI*2 clockwise:YES];
         // 设置描边宽度（为了让描边看上去更清楚）
-        [paths setLineWidth:3.0];
+        //[paths setLineWidth:3.0];
         // 描边和填充
         [paths stroke];
         [paths fill];
         
         CAShapeLayer *shaperLayer = [CAShapeLayer layer];
         shaperLayer.path = paths.CGPath;
-        shaperLayer.lineWidth = 2.0;
-        shaperLayer.strokeColor = [UIColor whiteColor].CGColor;
-        shaperLayer.fillColor = [UIColor whiteColor].CGColor;
+        shaperLayer.lineWidth = 1.0;
+        shaperLayer.strokeColor = [UIColor blackColor].CGColor;
+        shaperLayer.fillColor = [UIColor blackColor].CGColor;
         
         CABasicAnimation *anim = [CABasicAnimation animationWithKeyPath:NSStringFromSelector(@selector(strokeEnd))];
         anim.delegate = self;
@@ -226,6 +227,43 @@
         
         [shaperLayer addAnimation:anim forKey:NSStringFromSelector(@selector(strokeEnd))];
         [self.layer addSublayer:shaperLayer];
+    }
+}
+
+//创建渐变图层
+-(void)createColor:(NSMutableArray *)array
+{
+    CGPoint pointOne = CGPointFromString([array objectAtIndex:0]);
+    pointOne.y = self.frame.size.height - BELOW;
+    [array insertObject:NSStringFromCGPoint(pointOne) atIndex:0];
+    CGPoint pointLast = CGPointFromString([array objectAtIndex:array.count - 1]);
+    pointLast.y = self.frame.size.height - BELOW;
+    [array addObject:NSStringFromCGPoint(pointLast)];
+    
+    CAGradientLayer *gradLayer = [CAGradientLayer layer];
+    
+    gradLayer.frame = self.bounds;
+    
+    gradLayer.colors = @[(__bridge id)[UIColor redColor].CGColor,(__bridge id)[UIColor whiteColor].CGColor];
+    
+    gradLayer.startPoint = CGPointMake(0, 0);
+    gradLayer.endPoint = CGPointMake(0, 1);
+    gradLayer.locations = @[@0.1,@0.9];
+    gradLayer.type = kCAGradientLayerAxial;
+    [self.layer addSublayer:gradLayer];
+    
+    //给渐变层设置 mask 属性
+    {
+        // 设置只显示一个范围的渐变色
+        UIBezierPath *shapeLayerPath = [[UIBezierPath alloc] init];
+        // 点的坐标是相对于渐变层的
+        [shapeLayerPath moveToPoint:CGPointFromString([array objectAtIndex:0])];
+        for (int i = 1; i < array.count; i++) {
+            [shapeLayerPath addLineToPoint:CGPointFromString([array objectAtIndex:i])];
+        }
+        CAShapeLayer *shapeLayer = [CAShapeLayer layer];
+        shapeLayer.path = shapeLayerPath.CGPath;
+        gradLayer.mask = shapeLayer;
     }
 }
 
@@ -348,6 +386,8 @@
     if (_drawType == LineChart_Type) {
         [_arrayPoint addObjectsFromArray:[self disposePointArray:arrayPoint]];
         _startPint = CGPointFromString([_arrayPoint objectAtIndex:0]);
+        //绘制渐变色
+        [self createColor:[self disposePointArray:arrayPoint]];
         [self drawAction];
     }else if (_drawType == PieChart_Type){
         [_arrayPoint addObjectsFromArray:[self disposePointArray:arrayPoint]];
